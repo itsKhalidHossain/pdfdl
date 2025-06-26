@@ -17,7 +17,7 @@ _It only works on journals built with [OJS](https://pkp.sfu.ca/software/ojs/) fo
 To install from a local folder:
 
 ```bash
-git clone https://github.com/itskhalidhossain/pdfdl.git
+git clone https://github.com/itsKhalidHossain/pdfdl.git
 cd pdfdl
 pip install .
 ````
@@ -25,7 +25,7 @@ pip install .
 Or to install from GitHub:
 
 ```bash
-pip install git+https://github.com/itskhalidhossain/pdfdl.git
+pip install git+https://github.com/itsKhalidHossain/pdfdl.git
 ```
 
 ## Usage
