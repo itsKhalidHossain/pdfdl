@@ -1,0 +1,49 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Pip files
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Installer leftovers
+*.bak
+*.swp
+*.tmp
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints
+
+# macOS files
+.DS_Store
+
+# Windows thumbnails
+Thumbs.db
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# VS Code / JetBrains / other IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Test and debug output
+*.out
+*.log
+*.err
+
+# Coverage
+.coverage
+htmlcov/
+.cache/
+pytest_cache/
+
+# PDFs downloaded during testing (optional)
+downloads/

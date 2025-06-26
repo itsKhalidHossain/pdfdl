@@ -1,0 +1,21 @@
+[project]
+name = "pdfdl"
+version = "1.0.0"
+description = "Intelligently crawl web pages to find and download PDF files."
+authors = [
+    { name = "Khalid Hossain", email = "iamkhalidhossain@gmail.com" }
+]
+requires-python = ">=3.8"
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+    "tqdm",
+    "colorama"
+]
+
+[project.scripts]
+pdfdl = "pdfdl.cli:main"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
