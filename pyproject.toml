@@ -1,9 +1,9 @@
 [project]
 name = "pdfdl"
-version = "1.0.0"
+version = "1.0.1"
 description = "Intelligently crawl web pages to find and download PDF files."
 authors = [
-    { name = "Khalid Hossain", email = "iamkhalidhossain@gmail.com" }
+    { name = "Khalid Hossain" }
 ]
 requires-python = ">=3.8"
 dependencies = [

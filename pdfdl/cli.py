@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse, unquote
 from collections import deque
 from importlib.metadata import version as get_installed_version, PackageNotFoundError
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from tqdm import tqdm
 from colorama import init, Fore, Style
 
@@ -20,19 +20,15 @@ RESET = Style.RESET_ALL
 # User-Agent detection based on OS
 def get_default_user_agent():
     system = platform.system()
-    if system == "Windows":
-        return (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0"
-        )
-    elif system == "Darwin":
+    if system == "Darwin":
         return (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
             "(KHTML, like Gecko) Version/18.3.1 Safari/605.1.15"
         )
     elif system == "Linux":
         return "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
-    return "Mozilla/5.0"
+    return ("Mozilla/5.0Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        "(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0")
 
 
 # Print helpers
@@ -126,11 +122,49 @@ def process_url_queue(
     visited_urls = set()
     headers = {"User-Agent": user_agent}
 
+    article_view_pattern = re.compile(
+        r"/([^/]+)/article/view/(\d+)(?:/(\d+))"
+    )
+
     while queue:
         current_url = queue.popleft()
 
         if not current_url or current_url in visited_urls:
             continue
+
+        # Check for /<journal>/article/view/<submission_ID>/<upload_ID>/ pattern
+        match = article_view_pattern.search(current_url)
+        tried_download = False
+        if match:
+            journal, submission_id, upload_id = match.groups()
+            # Try /article/download/ first
+            download_url = current_url.replace(
+                "/article/view/", "/article/download/"
+            )
+
+            resolved_download_url = resolve_final_url(download_url, headers)
+            print(
+                f"\n{Style.BRIGHT}{Fore.YELLOW}--- Trying direct download: {UNDERLINE}{resolved_download_url}{RESET} ---"
+            )
+            try:
+                with requests.get(
+                    resolved_download_url,
+                    stream=True,
+                    timeout=30,
+                    allow_redirects=True,
+                    headers=headers,
+                ) as response:
+                    response.raise_for_status()
+                    content_type = response.headers.get("content-type", "").lower()
+                    if "application/pdf" in content_type:
+                        filename = get_filename_from_response(response)
+                        download_file(response, filename, output_dir, overwrite)
+                        visited_urls.add(resolved_download_url)
+                        tried_download = True
+                        print_success("Direct download succeeded.")
+                        continue  # Skip further processing for this URL
+            except Exception as e:
+                print_warn(f"Direct download attempt failed: {e}")
 
         resolved_url = resolve_final_url(current_url, headers)
         print(
@@ -157,12 +191,21 @@ def process_url_queue(
                     continue
 
                 elif "text/html" in content_type:
+                    links = []
                     print_info("Response is an HTML page. Scanning for links...")
                     soup = BeautifulSoup(response.text, "html.parser")
                     found_links = False
                     for link_tag in soup.find_all("a", href=True):
+                        if not isinstance(link_tag, Tag):
+                            continue
                         href = link_tag.get("href")
-                        link_class = link_tag.get("class", [])
+                        if isinstance(href, list):
+                            href = "".join(href)
+                        if not isinstance(href, str):
+                            continue  # Skip if href is not a string
+                        link_class = link_tag.get("class")
+                        if not link_class:
+                            link_class = []
                         has_download_attr = link_tag.has_attr("download")
 
                         absolute_link = urljoin(final_url, href)
@@ -190,14 +233,14 @@ def process_url_queue(
                                     print_error(
                                         f"Failed to download from {absolute_link}: {e}"
                                     )
-
-                        elif "pdf" in link_class:
+                        elif "pdf" in link_class or href.lower().endswith(".pdf"):
                             if (
                                 absolute_link not in visited_urls
                                 and absolute_link not in queue
                             ):
-                                queue.append(absolute_link)
+                                links.append(absolute_link)
                                 found_links = True
+                    queue = deque(links) + queue  # Prioritize new links
 
                     if not found_links:
                         print_warn("No new PDF links found on this page.")
