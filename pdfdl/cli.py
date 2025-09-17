@@ -233,7 +233,7 @@ def process_url_queue(
                                     print_error(
                                         f"Failed to download from {absolute_link}: {e}"
                                     )
-                        elif "pdf" in link_class or href.lower().endswith(".pdf"):
+                        elif "pdf" in link_class:
                             if (
                                 absolute_link not in visited_urls
                                 and absolute_link not in queue
